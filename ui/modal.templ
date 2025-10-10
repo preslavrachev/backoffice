@@ -1,0 +1,174 @@
+package ui
+
+import "backoffice/core"
+import "fmt"
+
+templ DeleteConfirmationModal(resource *core.Resource, item interface{}) {
+	<div id="delete-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 opacity-0 transition-opacity duration-300" 
+		 x-data="{ show: true }" 
+		 x-show="show" 
+		 x-transition:enter="transition ease-out duration-300"
+		 x-transition:enter-start="opacity-0"
+		 x-transition:enter-end="opacity-100"
+		 x-transition:leave="transition ease-in duration-200"
+		 x-transition:leave-start="opacity-100"
+		 x-transition:leave-end="opacity-0">
+		
+		<div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white transform transition-transform duration-300"
+			 x-transition:enter="transition ease-out duration-300 transform"
+			 x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+			 x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+			 x-transition:leave="transition ease-in duration-200 transform"
+			 x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+			 x-transition:leave-end="opacity-0 translate-y-4 scale-95">
+			
+			<div class="mt-3 text-center">
+				<div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+					<svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.962-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+					</svg>
+				</div>
+				<h3 class="text-lg leading-6 font-medium text-gray-900 mt-4">Delete { resource.DisplayName }</h3>
+				<div class="mt-2 px-7 py-3">
+					<p class="text-sm text-gray-500">
+						Are you sure you want to delete this { resource.DisplayName }? This action cannot be undone.
+					</p>
+					
+					if item != nil {
+						<div class="mt-4 p-3 bg-gray-50 rounded text-left">
+							<p class="text-xs text-gray-600 mb-1">Record details:</p>
+							for _, field := range resource.Fields {
+								if field.PrimaryKey || len(fmt.Sprintf("%v", core.GetFieldValue(item, field.Name))) < 50 {
+									<div class="text-sm">
+										<strong>{ field.DisplayName }:</strong> { fmt.Sprintf("%v", core.GetFieldValue(item, field.Name)) }
+									</div>
+								}
+							}
+						</div>
+					}
+				</div>
+				
+				<div class="items-center px-4 py-3 space-x-3 flex justify-center">
+					<button type="button" 
+							class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300 transition duration-200"
+							@click="show = false">
+						Cancel
+					</button>
+					
+					<button type="button"
+							hx-delete={ "/admin/api/" + resource.Name + "/" + fmt.Sprintf("%v", core.GetFieldValue(item, resource.IDField)) }
+							hx-target="closest tr"
+							hx-swap="delete"
+							hx-trigger="click"
+							hx-on::after-request="show = false"
+							class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition duration-200">
+						Delete
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+// RelatedItemsModal shows related items in an animated modal
+templ RelatedItemsModal(title string, items []interface{}, resource *core.Resource, fieldName string) {
+	<div id="related-items-modal" 
+	     class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+	     x-data="{ show: true }"
+	     x-show="show"
+	     x-transition.opacity.duration.300ms
+	     @click.self="show = false; setTimeout(() => document.getElementById('related-items-modal').remove(), 300)"
+	     @keydown.escape.window="show = false; setTimeout(() => document.getElementById('related-items-modal').remove(), 300)">
+		
+		<div class="relative top-20 mx-auto p-5 border w-11/12 max-w-2xl shadow-lg rounded-lg bg-white"
+		     x-show="show"
+		     x-transition:enter="transition ease-out duration-300"
+		     x-transition:enter-start="opacity-0 transform translate-y-4 scale-95"
+		     x-transition:enter-end="opacity-100 transform translate-y-0 scale-100">
+			
+			<!-- Modal Header -->
+			<div class="flex items-center justify-between pb-4 border-b border-gray-200">
+				<h3 class="text-lg font-semibold text-gray-900">{ title }</h3>
+				<button @click="show = false; setTimeout(() => document.getElementById('related-items-modal').remove(), 300)"
+				        class="text-gray-400 hover:text-gray-600 transition-colors">
+					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+					</svg>
+				</button>
+			</div>
+
+			<!-- Modal Content -->
+			<div class="py-4">
+				if len(items) == 0 {
+					<div class="text-center py-8 text-gray-500">
+						<p>No { fieldName } found.</p>
+					</div>
+				} else {
+					<div class="max-h-96 overflow-y-auto">
+						<div class="space-y-2">
+							for _, item := range items {
+								<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+									<div class="flex-1">
+										<div class="font-medium text-gray-900">
+											{ fmt.Sprintf("%v", core.GetFieldValue(item, getDisplayField(resource, item))) }
+										</div>
+										if resource != nil {
+											<div class="text-sm text-gray-500">
+												ID: { fmt.Sprintf("%v", core.GetFieldValue(item, resource.IDField)) }
+											</div>
+										}
+									</div>
+									<div class="flex space-x-2">
+										if resource != nil {
+											<a href={ templ.URL("/admin/" + resource.Name + "/" + fmt.Sprintf("%v", core.GetFieldValue(item, resource.IDField))) }
+											   class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+												View
+											</a>
+											<button hx-get={ "/admin/api/" + resource.Name + "/" + fmt.Sprintf("%v", core.GetFieldValue(item, resource.IDField)) + "/edit" }
+											        hx-target="body"
+											        hx-swap="beforeend"
+											        class="text-yellow-600 hover:text-yellow-800 text-sm font-medium">
+												Edit
+											</button>
+										}
+									</div>
+								</div>
+							}
+						</div>
+					</div>
+				}
+			</div>
+
+			<!-- Modal Footer -->
+			<div class="flex justify-end pt-4 border-t border-gray-200">
+				<button @click="show = false; setTimeout(() => document.getElementById('related-items-modal').remove(), 300)"
+				        class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors">
+					Close
+				</button>
+			</div>
+		</div>
+	</div>
+}
+
+// Helper function to get the best display field for an item
+func getDisplayField(resource *core.Resource, item interface{}) string {
+	if resource == nil {
+		return "Name" // fallback
+	}
+	
+	// Try common display field names in order of preference
+	possibleFields := []string{"Name", "Title", "DisplayName", resource.IDField}
+	
+	for _, fieldName := range possibleFields {
+		if value := core.GetFieldValue(item, fieldName); value != nil {
+			return fieldName
+		}
+	}
+	
+	// Fallback to the first field if none of the common ones exist
+	if len(resource.Fields) > 0 {
+		return resource.Fields[0].Name
+	}
+	
+	return "ID"
+}

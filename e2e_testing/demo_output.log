@@ -1,0 +1,19 @@
+🚀 BackOffice Admin Panel started!
+📱 Visit: http://localhost:8080/admin/
+
+📊 Available Resources:
+  • Department - Basic resource (no relationships)
+  • Employee (User) - Compact relationship display
+  • Product - Badge relationship display
+  • Category - Hierarchical relationship display
+
+🔗 Relationship Patterns Demonstrated:
+  • Employee → Department (Many-to-One, Compact)
+  • Product → Category (Many-to-One, Badge)
+  • Category → Parent Category (Many-to-One, Hierarchical)
+
+🌐 API endpoints:
+  GET /admin/api/Department
+  GET /admin/api/User
+  GET /admin/api/Product
+  GET /admin/api/Category

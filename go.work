@@ -1,0 +1,7 @@
+go 1.24
+
+use .
+
+use ./examples/sql-example
+
+use ./e2e_testing

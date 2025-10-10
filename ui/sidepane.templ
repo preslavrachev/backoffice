@@ -1,0 +1,196 @@
+package ui
+
+import "backoffice/core"
+import "fmt"
+
+// SidePane creates a sliding side pane overlay
+templ SidePane(title string, content templ.Component) {
+	<div id="sidepane-overlay" 
+	     class="fixed inset-0 z-40 overflow-hidden"
+	     x-data="{ show: true }"
+	     x-show="show" data-pw="sidepane-overlay"
+	     x-transition:enter="ease-in-out duration-300"
+	     x-transition:enter-start="opacity-0"
+	     x-transition:enter-end="opacity-100"
+	     x-transition:leave="ease-in-out duration-300"
+	     x-transition:leave-start="opacity-100"
+	     x-transition:leave-end="opacity-0">
+		
+		<!-- Background overlay -->
+		<div class="absolute inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+		     @click="show = false; setTimeout(() => document.getElementById('sidepane-overlay').remove(), 300)" data-pw="sidepane-backdrop"></div>
+		
+		<!-- Side pane -->
+		<div class="fixed inset-y-0 right-0 max-w-full flex">
+			<div class="w-screen max-w-md"
+			     x-show="show"
+			     x-transition:enter="transform transition ease-in-out duration-300"
+			     x-transition:enter-start="translate-x-full"
+			     x-transition:enter-end="translate-x-0"
+			     x-transition:leave="transform transition ease-in-out duration-300"
+			     x-transition:leave-start="translate-x-0"
+			     x-transition:leave-end="translate-x-full">
+				
+				<div class="h-full flex flex-col bg-white shadow-xl overflow-y-scroll" data-pw="sidepane-content">
+					<!-- Header -->
+					<div class="px-6 py-4 border-b border-gray-200 bg-gray-50" data-pw="sidepane-header">
+						<div class="flex items-center justify-between">
+							<h2 class="text-lg font-medium text-gray-900" data-pw="sidepane-title">{ title }</h2>
+							<button type="button" 
+							        class="rounded-md text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+							        @click="show = false; setTimeout(() => document.getElementById('sidepane-overlay').remove(), 300)" data-pw="sidepane-close-button">
+								<span class="sr-only">Close panel</span>
+								<svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+								</svg>
+							</button>
+						</div>
+					</div>
+					
+					<!-- Content -->
+					<div class="flex-1 px-6 py-4" data-pw="sidepane-body">
+						@content
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+// SidePaneForm creates a form specifically for the side pane
+templ SidePaneForm(resource *core.Resource, item interface{}, isEdit bool) {
+	if isEdit && item != nil {
+		<form hx-post={ "/admin/api/" + resource.Name + "/" + fmt.Sprintf("%v", core.GetFieldValue(item, resource.IDField)) }
+		      hx-trigger="submit"
+		      hx-target="#sidepane-overlay"
+		      hx-swap="outerHTML"
+		      class="space-y-6" data-pw="sidepane-edit-form">
+			<input type="hidden" name="_method" value="PUT"/>
+			@SidePaneFormFields(resource, item, isEdit)
+			@SidePaneFormButtons(resource.DisplayName, isEdit)
+		</form>
+	} else {
+		<form hx-post={ "/admin/api/" + resource.Name }
+		      hx-trigger="submit"
+		      hx-target="#sidepane-overlay"
+		      hx-swap="outerHTML"
+		      class="space-y-6" data-pw="sidepane-create-form">
+			@SidePaneFormFields(resource, item, isEdit)
+			@SidePaneFormButtons(resource.DisplayName, isEdit)
+		</form>
+	}
+}
+
+templ SidePaneFormFields(resource *core.Resource, item interface{}, isEdit bool) {
+	for _, field := range resource.Fields {
+		if !field.PrimaryKey {
+			<div class="space-y-1" data-pw={ "sidepane-field-group-" + field.Name }>
+				<label for={ field.Name } class="block text-sm font-medium text-gray-700" data-pw={ "sidepane-label-" + field.Name }>
+					{ field.DisplayName }
+					if field.Required {
+						<span class="text-red-500 ml-1">*</span>
+					}
+				</label>
+				@SidePaneFormField(field, getSidePaneFieldValue(item, field.Name, isEdit))
+				if field.Type != "" {
+					<p class="text-xs text-gray-500">Type: { field.Type }</p>
+				}
+			</div>
+		}
+	}
+}
+
+func getSidePaneFieldValue(item interface{}, fieldName string, isEdit bool) string {
+	if isEdit && item != nil {
+		return fmt.Sprintf("%v", core.GetFieldValue(item, fieldName))
+	}
+	return ""
+}
+
+templ SidePaneFormField(field core.FieldInfo, value string) {
+	switch field.Type {
+		case "bool":
+			<div class="flex items-center">
+				<input type="checkbox" 
+				       name={ field.Name } 
+				       id={ field.Name }
+				       value="true"
+				       if value == "true" {
+				       	checked
+				       }
+				       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" data-pw={ "sidepane-input-" + field.Name }/>
+			</div>
+		case "int", "int32", "int64", "uint", "uint32", "uint64":
+			<input type="number" 
+			       name={ field.Name } 
+			       id={ field.Name }
+			       value={ value }
+			       if field.Required {
+			       	required
+			       }
+			       if field.ReadOnly {
+			       	readonly
+			       }
+			       class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" data-pw={ "sidepane-input-" + field.Name }/>
+		case "float32", "float64":
+			<input type="number" 
+			       step="0.01"
+			       name={ field.Name } 
+			       id={ field.Name }
+			       value={ value }
+			       if field.Required {
+			       	required
+			       }
+			       if field.ReadOnly {
+			       	readonly
+			       }
+			       class="mt-1 shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md" data-pw={ "sidepane-input-" + field.Name }/>
+		case "time.Time":
+			<input type="datetime-local" 
+			       name={ field.Name } 
+			       id={ field.Name }
+			       value={ value }
+			       if field.Required {
+			       	required
+			       }
+			       if field.ReadOnly {
+			       	readonly
+			       }
+			       class="mt-1 shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md" data-pw={ "sidepane-input-" + field.Name }/>
+		default:
+			<input type="text" 
+			       name={ field.Name } 
+			       id={ field.Name }
+			       value={ value }
+			       if field.Required {
+			       	required
+			       }
+			       if field.ReadOnly {
+			       	readonly
+			       }
+			       class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" data-pw={ "sidepane-input-" + field.Name }/>
+	}
+}
+
+templ SidePaneFormButtons(displayName string, isEdit bool) {
+	<div class="flex justify-end space-x-3 pt-6 border-t border-gray-200" data-pw="sidepane-form-buttons">
+		<button type="button" 
+		        class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+		        @click="document.querySelector('[x-data]').show = false; setTimeout(() => document.getElementById('sidepane-overlay').remove(), 300)" data-pw="sidepane-cancel-button">
+			Cancel
+		</button>
+		<button type="submit" 
+		        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+		        hx-indicator="#loading-spinner" data-pw="sidepane-submit-button">
+			<svg id="loading-spinner" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white htmx-indicator" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+				<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+				<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+			</svg>
+			if isEdit {
+				<span>Update { displayName }</span>
+			} else {
+				<span>Create { displayName }</span>
+			}
+		</button>
+	</div>
+}

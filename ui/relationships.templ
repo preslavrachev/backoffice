@@ -1,0 +1,137 @@
+package ui
+
+import (
+	"backoffice/core"
+	"fmt"
+)
+
+// CompactRelationshipDisplay shows the relationship in a compact format with edit controls
+templ CompactRelationshipDisplay(item interface{}, field core.FieldInfo, resourceName string) {
+	if field.Relationship != nil && field.Relationship.Type == core.RelationshipManyToOne {
+		<div class="flex items-center justify-between group">
+			<div class="flex items-center space-x-2">
+				<div class="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0"></div>
+				if relatedValue := getListRelatedDisplayValue(item, field.Name, field.Relationship.DisplayField); relatedValue != "" {
+					<span class="text-gray-900 font-medium">{ relatedValue }</span>
+				} else {
+					<span class="text-gray-400 italic">No { field.Relationship.RelatedModel }</span>
+				}
+			</div>
+			<!-- Edit trigger appears on hover -->
+			<button 
+				hx-get={ "/admin/" + resourceName + "/" + getListRelationshipFieldValue(item, "ID") + "/edit-" + field.Relationship.RelatedModel }
+				hx-target="#edit-panel"
+				hx-swap="innerHTML"
+				class="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 transition-opacity">
+				<svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+					<path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.828-2.828z"></path>
+				</svg>
+			</button>
+		</div>
+		if relatedValue := getListRelatedDisplayValue(item, field.Name, "Location"); relatedValue != "" {
+			<div class="text-xs text-gray-500 mt-1">{ relatedValue }</div>
+		}
+	} else {
+		<span class="text-gray-900">{ formatListFieldValue(core.GetFieldValue(item, field.Name)) }</span>
+	}
+}
+
+// BadgeRelationshipDisplay shows the relationship as a contextual badge
+templ BadgeRelationshipDisplay(item interface{}, field core.FieldInfo, resourceName string) {
+	if field.Relationship != nil && field.Relationship.Type == core.RelationshipManyToOne {
+		if relatedValue := getListRelatedDisplayValue(item, field.Name, field.Relationship.DisplayField); relatedValue != "" {
+			<span 
+				hx-get={ "/admin/" + field.Relationship.RelatedModel + "/" + getListRelationshipFieldValue(item, field.Relationship.ForeignKey) }
+				hx-target="#detail-panel"
+				hx-swap="innerHTML"
+				class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+				       bg-blue-100 text-blue-800 cursor-pointer hover:bg-blue-200 
+				       transition-colors">
+				{ relatedValue }
+			</span>
+			if memberCount := getListRelatedDisplayValue(item, field.Name, "MemberCount"); memberCount != "" {
+				<div class="text-xs text-gray-500 mt-1">
+					{ memberCount } members
+				</div>
+			}
+		} else {
+			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+			           bg-gray-100 text-gray-500">
+				No { field.Relationship.RelatedModel }
+			</span>
+		}
+	} else {
+		<span class="text-gray-900">{ formatListFieldValue(core.GetFieldValue(item, field.Name)) }</span>
+	}
+}
+
+// HierarchicalRelationshipDisplay shows nested relationships with breadcrumb-style navigation
+templ HierarchicalRelationshipDisplay(item interface{}, field core.FieldInfo, resourceName string) {
+	if field.Relationship != nil && field.Relationship.Type == core.RelationshipManyToOne {
+		<div class="flex items-center space-x-1 text-sm">
+			// Show parent of parent if it exists (for hierarchical breadcrumb)
+			if parentOfParent := getListRelatedDisplayValue(item, field.Name, "Parent." + field.Relationship.DisplayField); parentOfParent != "" {
+				<span class="text-gray-500">{ parentOfParent }</span>
+				<svg class="w-4 h-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+					<path d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"></path>
+				</svg>
+			}
+			// Show the direct parent
+			if relatedValue := getListRelatedDisplayValue(item, field.Name, field.Relationship.DisplayField); relatedValue != "" {
+				<button 
+					hx-get={ "/admin/" + field.Relationship.RelatedModel + "/" + getListRelationshipFieldValue(item, field.Relationship.ForeignKey) }
+					hx-target="#detail-panel"
+					class="font-medium text-blue-600 hover:text-blue-500">
+					{ relatedValue }
+				</button>
+			} else {
+				<span class="text-gray-400 italic">No { field.Relationship.RelatedModel }</span>
+			}
+		</div>
+	} else {
+		<span class="text-gray-900">{ formatListFieldValue(core.GetFieldValue(item, field.Name)) }</span>
+	}
+}
+
+// Helper function to get related field display value
+func getListRelatedDisplayValue(item interface{}, fieldName string, displayField string) string {
+	if relatedObj := core.GetFieldValue(item, fieldName); relatedObj != nil {
+		if displayValue := core.GetFieldValue(relatedObj, displayField); displayValue != nil {
+			return formatListFieldValue(displayValue)
+		}
+	}
+	return ""
+}
+
+// Helper function to get field value as string for HTML attributes
+func getListRelationshipFieldValue(item interface{}, fieldName string) string {
+	if value := core.GetFieldValue(item, fieldName); value != nil {
+		return formatListFieldValue(value)
+	}
+	return ""
+}
+
+// Helper function to format field values for display
+func formatListFieldValue(value interface{}) string {
+	if value == nil {
+		return ""
+	}
+	
+	switch v := value.(type) {
+	case string:
+		return v
+	case int, int8, int16, int32, int64:
+		return fmt.Sprintf("%d", v)
+	case uint, uint8, uint16, uint32, uint64:
+		return fmt.Sprintf("%d", v)
+	case float32, float64:
+		return fmt.Sprintf("%.2f", v)
+	case bool:
+		if v {
+			return "Yes"
+		}
+		return "No"
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}
