@@ -47,6 +47,7 @@ type Product struct {
 	ID          uint      `json:"id" db:"id"`
 	Name        string    `json:"name" db:"name"`
 	Description string    `json:"description" db:"description"`
+	Details     string    `json:"details" db:"details"`
 	Price       float64   `json:"price" db:"price"`
 	CategoryID  uint      `json:"category_id" db:"category_id"`
 	Category    *Category `json:"category,omitempty" db:"-"`
@@ -138,6 +139,7 @@ func createSchema(db *sqlx.DB) error {
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL,
 		description TEXT,
+		details TEXT,
 		price REAL NOT NULL,
 		category_id INTEGER NOT NULL,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -237,6 +239,9 @@ func setupAdmin(db *sqlx.DB, authMode string, cfg *config.Config) {
 		WithDefaultSort("Price", core.SortDesc).
 		WithField("Name", func(f *core.FieldBuilder) {
 			f.DisplayName("Product Name").Required(true).Searchable(true)
+		}).
+		WithField("Details", func(f *core.FieldBuilder) {
+			f.DisplayName("Product Details").RenderAsHTML().MaxPreviewLength(150)
 		}).
 		WithField("Price", func(f *core.FieldBuilder) {
 			f.DisplayName("Price ($)").Required(true)
@@ -431,55 +436,56 @@ func seedData(db *sqlx.DB) {
 	products := []struct {
 		Name        string
 		Description string
+		Details     string
 		Price       float64
 		CategoryIdx int
 	}{
 		// Electronics products
-		{"MacBook Pro", "Professional laptop", 1299.99, 0},
-		{"ThinkPad X1", "Business laptop", 999.99, 0},
-		{"Dell XPS 13", "Ultrabook laptop", 849.99, 0},
-		{"iPhone 15 Pro", "Latest smartphone", 699.99, 1},
-		{"Samsung Galaxy S24", "Android flagship", 649.99, 1},
-		{"Google Pixel 8", "AI-powered phone", 599.99, 1},
-		{"iPad Pro", "Professional tablet", 799.99, 2},
-		{"Surface Pro", "2-in-1 tablet", 899.99, 2},
-		{"Sony WH-1000XM5", "Noise cancelling headphones", 299.99, 3},
-		{"AirPods Pro", "Wireless earbuds", 249.99, 3},
-		{"Apple Watch Ultra", "Rugged smartwatch", 799.99, 4},
-		{"Garmin Fenix 7", "GPS fitness watch", 699.99, 4},
+		{"MacBook Pro", "Professional laptop", "<p>The <strong>MacBook Pro</strong> features the powerful <em>M3 chip</em> with incredible performance.</p><ul><li>16GB RAM</li><li>512GB SSD</li><li>14-inch Retina display</li></ul>", 1299.99, 0},
+		{"ThinkPad X1", "Business laptop", "<p>Business-grade laptop with <strong>military-grade durability</strong>. Perfect for professionals who need reliability.</p><p>Includes Windows 11 Pro and full security suite.</p>", 999.99, 0},
+		{"Dell XPS 13", "Ultrabook laptop", "<h3>Ultra-portable powerhouse</h3><p>Featuring Intel's latest processor and stunning <em>InfinityEdge</em> display. Weighs only 2.7 lbs!</p>", 849.99, 0},
+		{"iPhone 15 Pro", "Latest smartphone", "<p>Experience the future with <strong>titanium design</strong> and the A17 Pro chip.</p><ul><li>48MP camera system</li><li>Action button</li><li>USB-C port</li></ul>", 699.99, 1},
+		{"Samsung Galaxy S24", "Android flagship", "<p>The <strong>Galaxy AI</strong> revolution starts here. Features advanced photo editing and real-time translation.</p>", 649.99, 1},
+		{"Google Pixel 8", "AI-powered phone", "<p>Magic Editor, Best Take, and Audio Magic Eraser powered by <em>Google Tensor G3</em>.</p><p>Now with 7 years of OS updates!</p>", 599.99, 1},
+		{"iPad Pro", "Professional tablet", "<p>The new <strong>iPad Pro</strong> is impossibly thin, featuring outrageous performance with the Apple M2 chip.</p><p>It features an all-new Apple Pencil hover experience and super-fast wireless connectivity. Plus, it works with the new Magic Keyboard Folio.</p><ul><li>12.9-inch Liquid Retina XDR display</li><li>M2 chip with 8-core CPU</li><li>12MP Wide camera, 10MP Ultra Wide back camera, and LiDAR Scanner</li><li>All-day battery life</li></ul>", 799.99, 2},
+		{"Surface Pro", "2-in-1 tablet", "<p>The most powerful <em>Surface Pro</em> ever. With the power of a laptop in the flexibility of a tablet.</p><p>Features 13th Gen Intel Core processors and incredible all-day battery life. The best of Windows 11 in an ultra-portable form factor.</p>", 899.99, 2},
+		{"Sony WH-1000XM5", "Noise cancelling headphones", "", 299.99, 3},
+		{"AirPods Pro", "Wireless earbuds", "", 249.99, 3},
+		{"Apple Watch Ultra", "Rugged smartwatch", "", 799.99, 4},
+		{"Garmin Fenix 7", "GPS fitness watch", "", 699.99, 4},
 
 		// Books
-		{"Go Programming Guide", "Learn Go programming", 49.99, 5},
-		{"Clean Code", "A handbook of agile software craftsmanship", 39.99, 5},
-		{"System Design Interview", "An insider's guide", 44.99, 5},
-		{"The Hobbit", "Fantasy adventure novel", 14.99, 6},
-		{"1984", "Dystopian social science fiction", 13.99, 6},
-		{"Dune", "Science fiction epic", 16.99, 6},
-		{"A Brief History of Time", "Cosmology for general readers", 18.99, 7},
-		{"Sapiens", "A brief history of humankind", 22.99, 8},
-		{"Steve Jobs", "Biography of Apple's founder", 17.99, 9},
+		{"Go Programming Guide", "Learn Go programming", "", 49.99, 5},
+		{"Clean Code", "A handbook of agile software craftsmanship", "", 39.99, 5},
+		{"System Design Interview", "An insider's guide", "", 44.99, 5},
+		{"The Hobbit", "Fantasy adventure novel", "", 14.99, 6},
+		{"1984", "Dystopian social science fiction", "", 13.99, 6},
+		{"Dune", "Science fiction epic", "", 16.99, 6},
+		{"A Brief History of Time", "Cosmology for general readers", "", 18.99, 7},
+		{"Sapiens", "A brief history of humankind", "", 22.99, 8},
+		{"Steve Jobs", "Biography of Apple's founder", "", 17.99, 9},
 
 		// Clothing
-		{"Cotton T-Shirt", "Comfortable cotton tee", 19.99, 10},
-		{"Premium T-Shirt", "High-quality organic cotton", 29.99, 10},
-		{"Levi's 501 Jeans", "Classic straight leg jeans", 89.99, 11},
-		{"Skinny Jeans", "Modern fit denim", 69.99, 11},
-		{"Summer Dress", "Light cotton dress", 79.99, 12},
-		{"Running Shoes", "Lightweight running shoes", 129.99, 13},
-		{"Leather Belt", "Genuine leather accessory", 49.99, 14},
+		{"Cotton T-Shirt", "Comfortable cotton tee", "", 19.99, 10},
+		{"Premium T-Shirt", "High-quality organic cotton", "", 29.99, 10},
+		{"Levi's 501 Jeans", "Classic straight leg jeans", "", 89.99, 11},
+		{"Skinny Jeans", "Modern fit denim", "", 69.99, 11},
+		{"Summer Dress", "Light cotton dress", "", 79.99, 12},
+		{"Running Shoes", "Lightweight running shoes", "", 129.99, 13},
+		{"Leather Belt", "Genuine leather accessory", "", 49.99, 14},
 
 		// Sports equipment
-		{"Yoga Mat", "Non-slip exercise mat", 39.99, 15},
-		{"Camping Tent", "2-person waterproof tent", 199.99, 16},
-		{"Basketball", "Official size basketball", 29.99, 17},
+		{"Yoga Mat", "Non-slip exercise mat", "", 39.99, 15},
+		{"Camping Tent", "2-person waterproof tent", "", 199.99, 16},
+		{"Basketball", "Official size basketball", "", 29.99, 17},
 	}
 
 	for _, prod := range products {
 		if prod.CategoryIdx < len(childIDs) {
 			_, err := db.Exec(`
-				INSERT INTO products (name, description, price, category_id, created_at) 
-				VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-			`, prod.Name, prod.Description, prod.Price, childIDs[prod.CategoryIdx])
+				INSERT INTO products (name, description, details, price, category_id, created_at)
+				VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+			`, prod.Name, prod.Description, prod.Details, prod.Price, childIDs[prod.CategoryIdx])
 			if err != nil {
 				log.Printf("Error inserting product: %v", err)
 			}

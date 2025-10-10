@@ -64,10 +64,10 @@ templ List(resource *core.Resource, items []interface{}, totalCount int, loadMor
 }
 
 templ ListRow(resource *core.Resource, item interface{}) {
-	<tr class="delete-row border-b border-gray-100 hover:bg-gray-50 transition-all duration-300 ease-in-out group" 
+	<tr class="delete-row border-b border-gray-100 hover:bg-gray-50 transition-all duration-300 ease-in-out group"
 		x-data="{ deleting: false }" data-pw="resource-row">
 		for _, field := range resource.Fields {
-			<td class="px-6 py-3 text-sm">
+			<td class="px-6 py-3 text-sm align-top">
 				if field.Relationship != nil && field.Relationship.Type == core.RelationshipManyToOne {
 					// Use appropriate relationship display pattern
 					if field.Relationship.DisplayPattern == "badge" {
@@ -84,7 +84,7 @@ templ ListRow(resource *core.Resource, item interface{}) {
 				}
 			</td>
 		}
-		<td class="px-6 py-4 whitespace-nowrap text-sm font-medium" data-pw="actions-cell">
+		<td class="px-6 py-4 whitespace-nowrap text-sm font-medium align-top" data-pw="actions-cell">
 			<div class="flex space-x-2 items-center">
 				<a href={ templ.URL("/admin/" + resource.Name + "/" + fmt.Sprintf("%v", core.GetFieldValue(item, resource.IDField))) }
 				   class="text-blue-600 hover:text-blue-900 transition-colors" data-pw="view-button">View</a>
@@ -122,11 +122,22 @@ templ displayFieldValue(item interface{}, field *core.FieldInfo, resource *core.
 			@FormatBooleanField(core.GetFieldValue(item, field.Name))
 		} else {
 			// Regular field display with clickable link to detail view
-			<a href={ templ.URL("/admin/" + resource.Name + "/" + fmt.Sprintf("%v", core.GetFieldValue(item, resource.IDField))) } 
-			   class="block text-gray-900 hover:text-blue-600">
-				<div class="font-medium text-gray-900">{ core.FormatFieldValueForDisplay(item, field) }</div>
-				if field.Type == "string" && len(fmt.Sprintf("%v", core.GetFieldValue(item, field.Name))) > 30 {
-					<div class="text-sm text-gray-500 truncate">{ fmt.Sprintf("%.30s...", core.GetFieldValue(item, field.Name)) }</div>
+			<a href={ templ.URL("/admin/" + resource.Name + "/" + fmt.Sprintf("%v", core.GetFieldValue(item, resource.IDField))) }
+			   class="block text-gray-900 hover:text-blue-600 group relative">
+				<div class="font-medium text-gray-900 pr-6">
+					if field.RenderAs == core.RenderHTML || field.RenderAs == core.RenderRichText {
+						<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 mr-1.5">
+							HTML
+						</span>
+					}
+					<span>{ core.FormatFieldValueForDisplay(item, field) }</span>
+				</div>
+				if isFieldTruncated(item, field) {
+					<span class="absolute top-0 right-0 text-gray-400 group-hover:text-blue-600 transition-colors">
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+						</svg>
+					</span>
 				}
 			</a>
 		}
@@ -298,4 +309,28 @@ func getSortHeaderTextClass(fieldName, currentSortField string) string {
 		return "text-blue-600 font-medium"
 	}
 	return ""
+}
+
+// isFieldTruncated checks if a field value was truncated based on MaxPreviewLength
+func isFieldTruncated(item interface{}, field *core.FieldInfo) bool {
+	if field.MaxPreviewLength <= 0 {
+		return false
+	}
+
+	rawValue := core.GetFieldValue(item, field.Name)
+	if rawValue == nil {
+		return false
+	}
+
+	// Get the raw string value
+	rawStr := fmt.Sprintf("%v", rawValue)
+
+	// For HTML fields, strip tags first to get actual text length
+	if field.RenderAs == core.RenderHTML || field.RenderAs == core.RenderRichText {
+		// We don't have direct access to stripHTMLTags here, but we can estimate
+		// by checking if raw HTML is significantly longer than MaxPreviewLength
+		return len(rawStr) > field.MaxPreviewLength
+	}
+
+	return len(rawStr) > field.MaxPreviewLength
 }

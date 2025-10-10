@@ -129,7 +129,7 @@ templ InlineRelationshipEditor(item interface{}, field core.FieldInfo, resourceN
 					<div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
 						<div class="flex items-center space-x-3">
 							<div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-								<span class="text-sm font-medium text-blue-700">{ getRelatedDisplayValue(item, field.Name, field.Relationship.DisplayField)[:2] }</span>
+								<span class="text-sm font-medium text-blue-700">{ getInitials(getRelatedDisplayValue(item, field.Name, field.Relationship.DisplayField)) }</span>
 							</div>
 							<div>
 								<div class="font-medium text-gray-900">{ getRelatedDisplayValue(item, field.Name, field.Relationship.DisplayField) }</div>
@@ -197,7 +197,7 @@ templ SidebarRelationshipSummary(item interface{}, field core.FieldInfo, resourc
 					<div class="flex items-center space-x-3 mb-4">
 						<div class="flex-shrink-0">
 							<div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
-								<span class="text-xs font-medium text-white">{ getRelatedDisplayValue(item, field.Name, field.Relationship.DisplayField)[:2] }</span>
+								<span class="text-xs font-medium text-white">{ getInitials(getRelatedDisplayValue(item, field.Name, field.Relationship.DisplayField)) }</span>
 							</div>
 						</div>
 						<div class="min-w-0 flex-1">
@@ -266,6 +266,17 @@ func getRelatedDisplayValue(item interface{}, fieldName string, displayField str
 		}
 	}
 	return ""
+}
+
+// getInitials safely extracts first 2 characters or returns default
+func getInitials(text string) string {
+	if len(text) >= 2 {
+		return text[:2]
+	}
+	if len(text) == 1 {
+		return text
+	}
+	return "?"
 }
 
 // Helper function to get field value as string for HTML attributes  

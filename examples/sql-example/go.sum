@@ -17,3 +17,5 @@ github.com/lib/pq v1.10.9/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
 github.com/mattn/go-sqlite3 v1.14.22/go.mod h1:Uh1q+B4BYcTPb+yiD3kU8Ct7aC0hY9fxUwlHK0RXw+Y=
 github.com/mattn/go-sqlite3 v1.14.32 h1:JD12Ag3oLy1zQA+BNn74xRgaBbdhbNIDYvQUEuuErjs=
 github.com/mattn/go-sqlite3 v1.14.32/go.mod h1:Uh1q+B4BYcTPb+yiD3kU8Ct7aC0hY9fxUwlHK0RXw+Y=
+github.com/preslavrachev/backoffice v0.0.0-20251010080646-cfa374ae58f5 h1:DVO4Oz5U2YCedEfHeOGx18sRmRJ9CZH/AFkzpmg77Tc=
+github.com/preslavrachev/backoffice v0.0.0-20251010080646-cfa374ae58f5/go.mod h1:x3MXU1EK6FZwOdpNTZ0lknT96pViiIiSOWv7sFJXfcg=

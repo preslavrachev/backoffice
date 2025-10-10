@@ -35,6 +35,11 @@ templ Detail(resource *core.Resource, item interface{}) {
 											<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
 												ID: { fmt.Sprintf("%v", core.GetFieldValue(item, field.Name)) }
 											</span>
+										} else if field.RenderAs == core.RenderHTML || field.RenderAs == core.RenderRichText {
+											// For HTML fields, render the full HTML in detail view
+											<div class="prose prose-sm max-w-none">
+												@templ.Raw(fmt.Sprintf("%v", core.GetFieldValue(item, field.Name)))
+											</div>
 										} else {
 											@FormatFieldValue(field, core.GetFieldValue(item, field.Name))
 										}

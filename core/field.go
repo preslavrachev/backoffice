@@ -10,6 +10,16 @@ const (
 	RelationshipManyToMany RelationshipType = "many_to_many"
 )
 
+// FieldRenderer defines how a field should be rendered in list views
+type FieldRenderer string
+
+const (
+	RenderText     FieldRenderer = "text"     // Plain text, truncate if needed
+	RenderHTML     FieldRenderer = "html"     // Strip HTML tags, show preview
+	RenderRichText FieldRenderer = "richtext" // Show formatted preview
+	RenderMarkdown FieldRenderer = "markdown" // Render markdown preview
+)
+
 // ComputeFunc is a function type for computing field values dynamically
 type ComputeFunc func(any) string
 
@@ -24,41 +34,45 @@ type RelationshipInfo struct {
 
 // FieldInfo represents metadata about a struct field
 type FieldInfo struct {
-	Name         string            `json:"name"`
-	Type         string            `json:"type"`
-	JSONName     string            `json:"json_name"`
-	DisplayName  string            `json:"display_name"`
-	DBColumnName string            `json:"db_column_name,omitempty"`
-	Required     bool              `json:"required"`
-	ReadOnly     bool              `json:"read_only"`
-	Searchable   bool              `json:"searchable"`
-	Unique       bool              `json:"unique"`
-	PrimaryKey   bool              `json:"primary_key"`
-	Choices      []string          `json:"choices,omitempty"`
-	DefaultVal   any               `json:"default_value,omitempty"`
-	Relationship *RelationshipInfo `json:"relationship,omitempty"`
-	IsComputed   bool              `json:"is_computed"`
-	ComputeFunc  ComputeFunc       `json:"-"`
-	SortFields   []SortField       `json:"sort_fields,omitempty"`
-	IsSortable   bool              `json:"is_sortable"`
+	Name             string            `json:"name"`
+	Type             string            `json:"type"`
+	JSONName         string            `json:"json_name"`
+	DisplayName      string            `json:"display_name"`
+	DBColumnName     string            `json:"db_column_name,omitempty"`
+	Required         bool              `json:"required"`
+	ReadOnly         bool              `json:"read_only"`
+	Searchable       bool              `json:"searchable"`
+	Unique           bool              `json:"unique"`
+	PrimaryKey       bool              `json:"primary_key"`
+	Choices          []string          `json:"choices,omitempty"`
+	DefaultVal       any               `json:"default_value,omitempty"`
+	Relationship     *RelationshipInfo `json:"relationship,omitempty"`
+	IsComputed       bool              `json:"is_computed"`
+	ComputeFunc      ComputeFunc       `json:"-"`
+	SortFields       []SortField       `json:"sort_fields,omitempty"`
+	IsSortable       bool              `json:"is_sortable"`
+	RenderAs         FieldRenderer     `json:"render_as,omitempty"`
+	MaxPreviewLength int               `json:"max_preview_length,omitempty"`
 }
 
 // FieldConfig holds configuration for a field
 type FieldConfig struct {
-	DisplayName  string
-	DBColumnName string
-	Required     bool
-	ReadOnly     bool
-	Searchable   bool
-	Unique       bool
-	PrimaryKey   bool
-	Choices      []string
-	DefaultVal   any
-	Relationship *RelationshipInfo
-	IsComputed   bool
-	ComputeFunc  ComputeFunc
-	SortFields   []SortField `json:"sort_fields,omitempty"`
-	IsSortable   bool        `json:"is_sortable"`
+	DisplayName      string
+	DBColumnName     string
+	Required         bool
+	ReadOnly         bool
+	Searchable       bool
+	Unique           bool
+	PrimaryKey       bool
+	Choices          []string
+	DefaultVal       any
+	Relationship     *RelationshipInfo
+	IsComputed       bool
+	ComputeFunc      ComputeFunc
+	SortFields       []SortField `json:"sort_fields,omitempty"`
+	IsSortable       bool        `json:"is_sortable"`
+	RenderAs         FieldRenderer
+	MaxPreviewLength int
 }
 
 // Apply applies the configuration to a FieldInfo
@@ -89,6 +103,12 @@ func (fc *FieldConfig) Apply(info *FieldInfo) {
 		info.SortFields = fc.SortFields
 	}
 	info.IsSortable = fc.IsSortable
+	if fc.RenderAs != "" {
+		info.RenderAs = fc.RenderAs
+	}
+	if fc.MaxPreviewLength > 0 {
+		info.MaxPreviewLength = fc.MaxPreviewLength
+	}
 }
 
 // FieldBuilder provides fluent API for configuring fields
@@ -195,6 +215,30 @@ func (fb *FieldBuilder) SortBy(fieldName string, direction SortDirection) *Field
 		Direction: direction,
 	})
 	fb.config.IsSortable = true
+	return fb
+}
+
+// RenderAsHTML configures the field to strip HTML tags and show preview
+func (fb *FieldBuilder) RenderAsHTML() *FieldBuilder {
+	fb.config.RenderAs = RenderHTML
+	return fb
+}
+
+// RenderAsRichText configures the field to show formatted preview
+func (fb *FieldBuilder) RenderAsRichText() *FieldBuilder {
+	fb.config.RenderAs = RenderRichText
+	return fb
+}
+
+// RenderAsMarkdown configures the field to render markdown preview
+func (fb *FieldBuilder) RenderAsMarkdown() *FieldBuilder {
+	fb.config.RenderAs = RenderMarkdown
+	return fb
+}
+
+// MaxPreviewLength sets the maximum length for field preview in list views
+func (fb *FieldBuilder) MaxPreviewLength(length int) *FieldBuilder {
+	fb.config.MaxPreviewLength = length
 	return fb
 }
 

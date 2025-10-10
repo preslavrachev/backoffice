@@ -1,9 +1,10 @@
 package core
 
 import (
-	"github.com/preslavrachev/backoffice/middleware/auth"
 	"context"
 	"testing"
+
+	"github.com/preslavrachev/backoffice/middleware/auth"
 )
 
 // Test structs for registration order testing

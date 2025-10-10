@@ -1,12 +1,13 @@
 package auth
 
 import (
-	"github.com/preslavrachev/backoffice/config"
 	"context"
 	"crypto/subtle"
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/preslavrachev/backoffice/config"
 )
 
 // BasicAuthUser represents a user configured for basic authentication

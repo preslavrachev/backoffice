@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/iancoleman/strcase"
@@ -327,6 +328,54 @@ func GetFieldValueWithResource(item any, fieldInfo *FieldInfo, resource *Resourc
 
 // FormatFieldValueForDisplay formats field values for display in UI templates
 // Handles special cases like slices (shows count) and relationships
+// stripHTMLTags removes HTML tags from a string and returns plain text
+func stripHTMLTags(html string) string {
+	// Simple regex-based HTML tag removal
+	// This handles most common HTML cases without external dependencies
+	result := html
+
+	// Replace block-level tags with space to preserve sentence boundaries
+	blockTags := []string{"</p>", "</div>", "</h1>", "</h2>", "</h3>", "</h4>", "</h5>", "</h6>", "</li>", "</tr>", "</td>", "<br>", "<br/>"}
+	for _, tag := range blockTags {
+		result = strings.ReplaceAll(result, tag, " ")
+	}
+
+	// Remove all HTML tags
+	tagPattern := `<[^>]*>`
+	result = regexp.MustCompile(tagPattern).ReplaceAllString(result, "")
+
+	// Decode common HTML entities
+	result = strings.ReplaceAll(result, "&nbsp;", " ")
+	result = strings.ReplaceAll(result, "&lt;", "<")
+	result = strings.ReplaceAll(result, "&gt;", ">")
+	result = strings.ReplaceAll(result, "&amp;", "&")
+	result = strings.ReplaceAll(result, "&quot;", "\"")
+	result = strings.ReplaceAll(result, "&#39;", "'")
+
+	// Collapse multiple spaces and trim
+	spacePattern := `\s+`
+	result = regexp.MustCompile(spacePattern).ReplaceAllString(result, " ")
+	result = strings.TrimSpace(result)
+
+	return result
+}
+
+// truncateText truncates text to maxLength and adds ellipsis if needed
+func truncateText(text string, maxLength int) string {
+	if len(text) <= maxLength {
+		return text
+	}
+
+	// Try to break at word boundary
+	truncated := text[:maxLength]
+	lastSpace := strings.LastIndex(truncated, " ")
+	if lastSpace > maxLength/2 {
+		truncated = text[:lastSpace]
+	}
+
+	return truncated + "..."
+}
+
 func FormatFieldValueForDisplay(item any, field *FieldInfo) string {
 	// Handle computed fields
 	if field.IsComputed && field.ComputeFunc != nil {
@@ -357,7 +406,20 @@ func FormatFieldValueForDisplay(item any, field *FieldInfo) string {
 		value = reflectVal.Elem().Interface()
 	}
 
-	return fmt.Sprintf("%v", value)
+	// Convert to string
+	strValue := fmt.Sprintf("%v", value)
+
+	// Check if field should render as HTML preview
+	if field.RenderAs == RenderHTML || field.RenderAs == RenderRichText {
+		strValue = stripHTMLTags(strValue)
+	}
+
+	// Apply max preview length if configured
+	if field.MaxPreviewLength > 0 {
+		strValue = truncateText(strValue, field.MaxPreviewLength)
+	}
+
+	return strValue
 }
 
 // FormatFieldValueForDisplayWithResource formats field values for display in UI templates
