@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"backoffice/core"
+	"github.com/preslavrachev/backoffice/core"
 )
 
 // TestListBooleanFieldIntegration tests that boolean fields in the list render using the Yes/No component

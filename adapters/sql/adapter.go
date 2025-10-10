@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"backoffice/core"
+	"github.com/preslavrachev/backoffice/core"
 
 	"github.com/iancoleman/strcase"
 )

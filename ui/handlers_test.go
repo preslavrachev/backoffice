@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	sqladapter "backoffice/adapters/sql"
-	"backoffice/core"
-	"backoffice/middleware/auth"
+	sqladapter "github.com/preslavrachev/backoffice/adapters/sql"
+	"github.com/preslavrachev/backoffice/core"
+	"github.com/preslavrachev/backoffice/middleware/auth"
 
 	_ "github.com/mattn/go-sqlite3"
 )

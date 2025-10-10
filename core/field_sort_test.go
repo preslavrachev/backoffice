@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"backoffice/middleware/auth"
+	"github.com/preslavrachev/backoffice/middleware/auth"
 )
 
 // Test struct for sort testing

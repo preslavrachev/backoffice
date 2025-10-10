@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"backoffice/middleware/auth"
+	"github.com/preslavrachev/backoffice/middleware/auth"
 )
 
 // Test struct for field order testing

@@ -1,8 +1,8 @@
 package ui
 
 import (
-	"backoffice/core"
-	"backoffice/middleware/auth"
+	"github.com/preslavrachev/backoffice/core"
+	"github.com/preslavrachev/backoffice/middleware/auth"
 	"context"
 	"fmt"
 	"net/http"

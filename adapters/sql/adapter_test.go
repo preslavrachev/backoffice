@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"backoffice/core"
+	"github.com/preslavrachev/backoffice/core"
 
 	_ "github.com/mattn/go-sqlite3"
 )

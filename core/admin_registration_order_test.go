@@ -1,7 +1,7 @@
 package core
 
 import (
-	"backoffice/middleware/auth"
+	"github.com/preslavrachev/backoffice/middleware/auth"
 	"context"
 	"testing"
 )

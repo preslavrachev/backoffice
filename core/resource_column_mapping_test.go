@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"backoffice/middleware/auth"
+	"github.com/preslavrachev/backoffice/middleware/auth"
 
 	"github.com/iancoleman/strcase"
 )

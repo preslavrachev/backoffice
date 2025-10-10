@@ -1,10 +1,6 @@
 package main
 
 import (
-	"backoffice/config"
-	"backoffice/core"
-	"backoffice/middleware/auth"
-	"backoffice/ui"
 	"database/sql"
 	"flag"
 	"fmt"
@@ -13,7 +9,12 @@ import (
 	"os"
 	"time"
 
-	sqladapter "backoffice/adapters/sql"
+	"github.com/preslavrachev/backoffice/config"
+	"github.com/preslavrachev/backoffice/core"
+	"github.com/preslavrachev/backoffice/middleware/auth"
+	"github.com/preslavrachev/backoffice/ui"
+
+	sqladapter "github.com/preslavrachev/backoffice/adapters/sql"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"

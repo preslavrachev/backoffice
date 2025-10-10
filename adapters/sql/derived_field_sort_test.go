@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"backoffice/core"
-	"backoffice/middleware/auth"
+	"github.com/preslavrachev/backoffice/core"
+	"github.com/preslavrachev/backoffice/middleware/auth"
 
 	_ "github.com/mattn/go-sqlite3"
 )

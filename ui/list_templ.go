@@ -6,7 +6,7 @@ package ui
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
 import (
-	"backoffice/core"
+	"github.com/preslavrachev/backoffice/core"
 	"context"
 	"fmt"
 	"reflect"

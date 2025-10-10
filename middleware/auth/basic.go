@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"backoffice/config"
+	"github.com/preslavrachev/backoffice/config"
 	"context"
 	"crypto/subtle"
 	"errors"

@@ -1,4 +1,4 @@
-module backoffice
+module github.com/preslavrachev/backoffice
 
 go 1.24
 
