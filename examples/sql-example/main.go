@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"flag"
 	"fmt"
@@ -232,6 +233,32 @@ func setupAdmin(db *sqlx.DB, authMode string, cfg *config.Config) {
 		}).
 		WithManyToOneField("Department", "Department", func(r *core.RelationshipBuilder) {
 			r.DisplayField("Name").CompactDisplay() // Compact display in lists
+		}).
+		WithAction("activate", "Activate User", func(ctx context.Context, id any) error {
+			_, err := db.DB.ExecContext(ctx, "UPDATE users SET active = 1 WHERE id = ?", id)
+			if err != nil {
+				return fmt.Errorf("failed to activate user: %w", err)
+			}
+			fmt.Printf("✅ User %v activated\n", id)
+			return nil
+		}).
+		WithAction("deactivate", "Deactivate User", func(ctx context.Context, id any) error {
+			_, err := db.DB.ExecContext(ctx, "UPDATE users SET active = 0 WHERE id = ?", id)
+			if err != nil {
+				return fmt.Errorf("failed to deactivate user: %w", err)
+			}
+			fmt.Printf("⛔ User %v deactivated\n", id)
+			return nil
+		}).
+		WithAction("send_welcome", "Send Welcome Email", func(ctx context.Context, id any) error {
+			// Simulate sending email
+			var email string
+			err := db.DB.QueryRowContext(ctx, "SELECT email FROM users WHERE id = ?", id).Scan(&email)
+			if err != nil {
+				return fmt.Errorf("failed to get user email: %w", err)
+			}
+			fmt.Printf("📧 Welcome email sent to %s (user %v)\n", email, id)
+			return nil
 		})
 
 	// Register Product with badge relationship display and Price DESC sorting

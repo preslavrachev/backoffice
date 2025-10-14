@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -80,7 +81,8 @@ func (bo *BackOffice) RegisterResource(model any) *ResourceBuilder {
 		Hidden:       false,
 		ReadOnly:     false,
 		FieldConfigs: make(map[string]*FieldConfig),
-		FieldOrder:   []string{}, // Initialize empty order slice
+		FieldOrder:   []string{},       // Initialize empty order slice
+		Actions:      []CustomAction{}, // Initialize empty actions slice
 	}
 
 	// Discover fields using reflection
@@ -212,6 +214,17 @@ func (rb *ResourceBuilder) WithDefaultSort(field string, direction SortDirection
 		Direction:  direction,
 		Precedence: SortPrecedenceExplicit,
 	}
+	return rb
+}
+
+// WithAction registers a custom action for this resource
+func (rb *ResourceBuilder) WithAction(id, title string, handler func(ctx context.Context, id any) error) *ResourceBuilder {
+	action := CustomAction{
+		ID:      id,
+		Title:   title,
+		Handler: handler,
+	}
+	rb.resource.Actions = append(rb.resource.Actions, action)
 	return rb
 }
 

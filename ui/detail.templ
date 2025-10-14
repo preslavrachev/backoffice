@@ -11,12 +11,15 @@ templ Detail(resource *core.Resource, item interface{}) {
 					{ resource.DisplayName } Details
 				</h2>
 			</div>
-			<div class="flex space-x-2">
-				<a href={ templ.URL("/admin/" + resource.Name) } 
+			<div class="flex space-x-2 items-center">
+				<a href={ templ.URL("/admin/" + resource.Name) }
 				   class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors">← Back to List</a>
-				<a href={ templ.URL("/admin/" + resource.Name + "/" + fmt.Sprintf("%v", core.GetFieldValue(item, resource.IDField)) + "/edit") } 
+				<a href={ templ.URL("/admin/" + resource.Name + "/" + fmt.Sprintf("%v", core.GetFieldValue(item, resource.IDField)) + "/edit") }
 				   class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 transition-colors">Edit</a>
 				@DeleteButton(resource, item)
+				if len(resource.Actions) > 0 {
+					@DetailActionDropdown(resource, item)
+				}
 			</div>
 		</div>
 		
@@ -146,4 +149,43 @@ func hasRelationshipFields(resource *core.Resource) bool {
 		}
 	}
 	return false
+}
+
+// DetailActionDropdown renders a styled dropdown menu for custom actions in detail view
+templ DetailActionDropdown(resource *core.Resource, item interface{}) {
+	<div class="relative inline-block text-left" x-data="{ open: false }" @click.away="open = false">
+		<button @click="open = !open"
+		        type="button"
+		        class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors flex items-center space-x-2"
+		        data-pw="detail-actions-menu-button">
+			<span>Actions</span>
+			<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+				<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+			</svg>
+		</button>
+
+		<div x-show="open"
+		     x-transition:enter="transition ease-out duration-100"
+		     x-transition:enter-start="transform opacity-0 scale-95"
+		     x-transition:enter-end="transform opacity-100 scale-100"
+		     x-transition:leave="transition ease-in duration-75"
+		     x-transition:leave-start="transform opacity-100 scale-100"
+		     x-transition:leave-end="transform opacity-0 scale-95"
+		     class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10"
+		     style="display: none;">
+			<div class="py-1" role="menu">
+				for _, action := range resource.Actions {
+					<button
+						hx-post={ "/admin/api/" + resource.Name + "/" + fmt.Sprintf("%v", core.GetFieldValue(item, resource.IDField)) + "/action" }
+						hx-vals={ fmt.Sprintf(`{"action_id": "%s"}`, action.ID) }
+						hx-confirm={ "Are you sure you want to perform this action: " + action.Title + "?" }
+						@click="open = false"
+						class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+						data-pw={ "detail-action-" + action.ID }>
+						{ action.Title }
+					</button>
+				}
+			</div>
+		</div>
+	</div>
 }

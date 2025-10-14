@@ -1,14 +1,15 @@
 package ui
 
 import (
-	"github.com/preslavrachev/backoffice/core"
-	"github.com/preslavrachev/backoffice/middleware/auth"
 	"context"
 	"fmt"
 	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/preslavrachev/backoffice/core"
+	"github.com/preslavrachev/backoffice/middleware/auth"
 )
 
 // Handler returns an HTTP handler for the admin panel
@@ -362,6 +363,9 @@ func (h *BackOfficeHandler) apiRouter(w http.ResponseWriter, r *http.Request) {
 		if segments[2] == "edit" && r.Method == http.MethodGet {
 			// GET /api/users/123/edit - return edit form side pane
 			h.renderEditSidePane(w, r, resource, segments[1])
+		} else if segments[2] == "action" && r.Method == http.MethodPost {
+			// POST /api/users/123/action - execute custom action
+			h.handleCustomAction(w, r, resource, segments[1])
 		} else {
 			h.writeHTTPError(w, "Invalid API operation", http.StatusMethodNotAllowed)
 		}
@@ -951,6 +955,52 @@ func isReservedParam(param string) bool {
 		}
 	}
 	return false
+}
+
+// handleCustomAction handles execution of custom actions
+func (h *BackOfficeHandler) handleCustomAction(w http.ResponseWriter, r *http.Request, resource *core.Resource, idStr string) {
+	// Parse form to get action ID
+	if err := r.ParseForm(); err != nil {
+		h.writeHTTPErrorWithToast(w, "Invalid form data", http.StatusBadRequest, "error")
+		return
+	}
+
+	actionID := r.FormValue("action_id")
+	if actionID == "" {
+		h.writeHTTPErrorWithToast(w, "Action ID is required", http.StatusBadRequest, "error")
+		return
+	}
+
+	// Find the action
+	var action *core.CustomAction
+	for i := range resource.Actions {
+		if resource.Actions[i].ID == actionID {
+			action = &resource.Actions[i]
+			break
+		}
+	}
+
+	if action == nil {
+		h.writeHTTPErrorWithToast(w, "Action not found", http.StatusNotFound, "error")
+		return
+	}
+
+	// Parse ID
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		h.writeHTTPErrorWithToast(w, "Invalid ID format", http.StatusBadRequest, "error")
+		return
+	}
+
+	// Execute the action
+	if err := action.Handler(r.Context(), uint(id)); err != nil {
+		h.writeHTTPErrorWithToast(w, fmt.Sprintf("Action failed: %v", err), http.StatusInternalServerError, "error")
+		return
+	}
+
+	// Success - send toast notification
+	w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "%s completed successfully", "type": "success"}}`, action.Title))
+	w.WriteHeader(http.StatusOK)
 }
 
 // renderLoadMoreRows renders additional rows for HTMX "Load More" functionality
