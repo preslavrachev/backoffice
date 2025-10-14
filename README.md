@@ -4,6 +4,10 @@
 
 Stop writing the same CRUD boilerplate. Define your structs, point BackOffice at your database, and get a professional admin UI instantly.
 
+## Demo
+
+![](https://preslav.me/img/backoffice-demo.gif)
+
 ## Why BackOffice?
 
 **Before**: You used to spend days building user management, product catalog, order history pages. Each one needs: list view, search, pagination, forms, validation, edit modals. Repeat for every model.
