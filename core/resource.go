@@ -25,6 +25,7 @@ type Resource struct {
 	FieldConfigs map[string]*FieldConfig `json:"-"`
 	FieldOrder   []string                `json:"-"`            // Track order of field registration
 	DefaultSort  SortField               `json:"default_sort"` // Default sorting configuration
+	Actions      []CustomAction          `json:"-"`            // Custom actions for this resource
 }
 
 // ResourceMeta contains basic metadata for templates
