@@ -81,7 +81,8 @@ func (bo *BackOffice) RegisterResource(model any) *ResourceBuilder {
 		Hidden:       false,
 		ReadOnly:     false,
 		FieldConfigs: make(map[string]*FieldConfig),
-		FieldOrder:   []string{}, // Initialize empty order slice
+		FieldOrder:   []string{},       // Initialize empty order slice
+		Actions:      []CustomAction{}, // Initialize empty actions slice
 	}
 
 	// Discover fields using reflection
