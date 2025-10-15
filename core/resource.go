@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/iancoleman/strcase"
 )
 
@@ -19,6 +21,7 @@ type Resource struct {
 	Fields       []FieldInfo             `json:"fields"`
 	PrimaryKey   string                  `json:"primary_key"`
 	IDField      string                  `json:"id_field"`
+	IDFieldType  reflect.Type            `json:"-"` // Cached type of ID field for efficient parsing
 	TableName    string                  `json:"table_name"`
 	Hidden       bool                    `json:"hidden"`
 	ReadOnly     bool                    `json:"read_only"`
@@ -115,6 +118,7 @@ func (r *Resource) DiscoverFields() error {
 
 			r.PrimaryKey = field.Name
 			r.IDField = field.Name
+			r.IDFieldType = field.Type // Cache ID field type for efficient parsing
 			r.Fields = append(r.Fields, fieldInfo)
 			break
 		}
@@ -272,8 +276,8 @@ func isPrimaryKeyField(field reflect.StructField) bool {
 		return true
 	}
 
-	// Common primary key field names
-	return field.Name == "ID" && field.Type.String() == "uint"
+	// Common primary key field names (accept any type for ID field)
+	return field.Name == "ID"
 }
 
 // Helper function to check if a type is numeric (suitable for foreign keys)
@@ -586,4 +590,70 @@ func (r *Resource) parseStructTags(fieldName string) string {
 	}
 
 	return ""
+}
+
+// ParseID parses an ID string based on the actual ID field type of this resource.
+// Supports integers (int/int64/uint/uint32/etc), strings (including UUIDs), and custom string types.
+// Returns the parsed ID value and an error if parsing fails.
+func (r *Resource) ParseID(idStr string) (any, error) {
+	if r.IDFieldType == nil {
+		return nil, fmt.Errorf("ID field type not initialized for resource %s: %w", r.Name, fmt.Errorf("missing IDFieldType"))
+	}
+
+	// Get the underlying type (handle pointers)
+	idType := r.IDFieldType
+	if idType.Kind() == reflect.Ptr {
+		idType = idType.Elem()
+	}
+
+	switch idType.Kind() {
+	case reflect.String:
+		// String IDs (UUIDs, custom strings, etc.)
+		// No validation - accept any string. Adapter will validate if needed.
+		return idStr, nil
+
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		// Signed integer IDs
+		bitSize := 64
+		if idType.Kind() != reflect.Int64 {
+			bitSize = int(idType.Size() * 8)
+		}
+		val, err := strconv.ParseInt(idStr, 10, bitSize)
+		if err != nil {
+			return nil, fmt.Errorf("invalid integer ID format for %s: %w", r.Name, err)
+		}
+		// Convert to the specific int type
+		return reflect.ValueOf(val).Convert(idType).Interface(), nil
+
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		// Unsigned integer IDs
+		bitSize := 64
+		if idType.Kind() != reflect.Uint64 {
+			bitSize = int(idType.Size() * 8)
+		}
+		val, err := strconv.ParseUint(idStr, 10, bitSize)
+		if err != nil {
+			return nil, fmt.Errorf("invalid unsigned integer ID format for %s: %w", r.Name, err)
+		}
+		// Convert to the specific uint type
+		return reflect.ValueOf(val).Convert(idType).Interface(), nil
+
+	default:
+		// Check for uuid.UUID type (struct type from github.com/google/uuid)
+		if idType.Kind() == reflect.Array && idType.Elem().Kind() == reflect.Uint8 && idType.Len() == 16 {
+			// This is likely uuid.UUID which is [16]byte
+			parsedUUID, err := uuid.Parse(idStr)
+			if err != nil {
+				return nil, fmt.Errorf("invalid UUID format for %s: %w", r.Name, err)
+			}
+			return parsedUUID, nil
+		}
+
+		// For custom types built on strings (type UserID string), check the underlying kind
+		if idType.Kind() == reflect.String || (idType.Kind() == reflect.Struct && idType.PkgPath() == "database/sql" && idType.Name() == "NullString") {
+			return idStr, nil
+		}
+
+		return nil, fmt.Errorf("unsupported ID field type %s (%s) for resource %s", idType.Kind(), idType.String(), r.Name)
+	}
 }
